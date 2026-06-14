@@ -5,12 +5,75 @@
 #include "book.h"
 #include <iostream>
 #include <sstream>
+#include <algorithm>
+#include <utility>
+#if defined(_WIN32) || defined(_WIN64)
+#include <windows.h>
+#include <functional>
+
+class Win32Thread {
+private:
+    HANDLE hThread;
+    static DWORD WINAPI ThreadProc(LPVOID lpParam) {
+        auto* func = static_cast<std::function<void()>*>(lpParam);
+        (*func)();
+        delete func;
+        return 0;
+    }
+public:
+    Win32Thread() : hThread(NULL) {}
+    ~Win32Thread() {
+        if (hThread) {
+            CloseHandle(hThread);
+        }
+    }
+    Win32Thread(const Win32Thread&) = delete;
+    Win32Thread& operator=(const Win32Thread&) = delete;
+    
+    Win32Thread(Win32Thread&& other) noexcept {
+        hThread = other.hThread;
+        other.hThread = NULL;
+    }
+    Win32Thread& operator=(Win32Thread&& other) noexcept {
+        if (this != &other) {
+            if (hThread) CloseHandle(hThread);
+            hThread = other.hThread;
+            other.hThread = NULL;
+        }
+        return *this;
+    }
+
+    template<typename Callable, typename... Args>
+    explicit Win32Thread(Callable&& f, Args&&... args) {
+        auto* func = new std::function<void()>(std::bind(std::forward<Callable>(f), std::forward<Args>(args)...));
+        hThread = CreateThread(NULL, 0, ThreadProc, func, 0, NULL);
+        if (!hThread) {
+            delete func;
+        }
+    }
+
+    bool joinable() const {
+        return hThread != NULL;
+    }
+
+    void join() {
+        if (hThread) {
+            WaitForSingleObject(hThread, INFINITE);
+            CloseHandle(hThread);
+            hThread = NULL;
+        }
+    }
+};
+using thread_t = Win32Thread;
+#else
 #include <thread>
+using thread_t = std::thread;
+#endif
 
 Board        gBoard;
 Search       gSearch;
 OpeningBook  gBook;
-std::thread  gSearchThread;
+thread_t     gSearchThread;
 bool         gUseBook = true;
 
 std::string moveToUCI(Move m){
@@ -110,7 +173,7 @@ int main(){
             if(gSearchThread.joinable()) gSearchThread.join();
             gSearch.stop=false;
 
-            gSearchThread=std::thread([depth,movetime](){
+            gSearchThread=thread_t([depth,movetime](){
                 // Try opening book first
                 if(gUseBook){
                     std::string bookMove=gBook.probe(gBoard.toFen());

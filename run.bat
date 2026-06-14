@@ -10,7 +10,7 @@ if not exist "%BRIDGE_DIR%\chessmind.exe" (
 )
 
 :: Load env
-for /f "tokens=1,2 delims==" %%a in ("%BRIDGE_DIR%\.env") do set %%a=%%b
+for /f "usebackq tokens=1,2 delims==" %%a in ("%BRIDGE_DIR%\.env") do set %%a=%%b
 
 echo Starting ChessMind bridge...
 cd /d "%BRIDGE_DIR%"

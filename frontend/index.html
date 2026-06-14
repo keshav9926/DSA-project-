@@ -7,126 +7,1044 @@
 <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-:root{
-  --bg:#0a0a0f;
-  --surface:#12121a;
-  --surface2:#1a1a28;
-  --border:#2a2a3e;
-  --accent:#7c6af7;
-  --accent2:#a78bfa;
-  --green:#22c55e;
-  --yellow:#eab308;
-  --red:#ef4444;
-  --text:#e2e8f0;
-  --muted:#64748b;
-  --white-sq:#f0d9b5;
-  --dark-sq:#b58863;
-  --last-move-light:rgba(124,101,247,0.35);
-  --last-move-dark:rgba(124,101,247,0.55);
-  --hint1:rgba(34,197,94,0.7);
-  --hint2:rgba(234,179,8,0.65);
-  --hint3:rgba(249,115,22,0.55);
+/* ═══════════════════════════════════════════════════════════
+   RETRO NEON AESTHETIC — ChessMind
+   ═══════════════════════════════════════════════════════════ */
+:root {
+  --bg-deep: #0a0a0f;
+  --bg-surface: #0d0d14;
+  --surface: rgba(13, 13, 20, 0.85);
+  --surface-light: rgba(20, 20, 30, 0.9);
+  --border: rgba(0, 255, 200, 0.12);
+  --accent: #00ffc8;
+  --accent-light: #39ffce;
+  --accent-glow: rgba(0, 255, 200, 0.2);
+  --cyan: #00e5ff;
+  --magenta: #ff2d95;
+  --green: #39ff14;
+  --yellow: #ffe600;
+  --red: #ff3c3c;
+  --text: #e0ffe0;
+  --text-muted: #5a7a6a;
+  --neon-pink: #ff2d95;
+  --neon-blue: #00e5ff;
+  --neon-green: #39ff14;
+  --grid-color: rgba(0, 255, 200, 0.04);
 }
-body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden}
-.mono{font-family:'Space Mono',monospace}
 
-/* ── Layout ── */
-.app{display:grid;grid-template-columns:200px 1fr 280px;grid-template-rows:56px 1fr;min-height:100vh;gap:0}
-.header{grid-column:1/-1;display:flex;align-items:center;gap:16px;padding:0 24px;border-bottom:1px solid var(--border);background:var(--surface)}
-.logo{font-family:'Space Mono',monospace;font-size:18px;font-weight:700;color:var(--accent2);letter-spacing:-1px}
-.logo span{color:var(--text)}
-.header-right{margin-left:auto;display:flex;gap:10px;align-items:center}
+/* Global Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
-.left-panel{background:var(--surface);border-right:1px solid var(--border);padding:20px 16px;display:flex;flex-direction:column;gap:20px}
-.center{display:flex;align-items:center;justify-content:center;padding:24px;background:var(--bg)}
-.right-panel{background:var(--surface);border-left:1px solid var(--border);padding:20px 16px;display:flex;flex-direction:column;gap:16px;overflow-y:auto}
+body {
+  background: var(--bg-deep);
+  color: var(--text);
+  font-family: 'Space Mono', monospace;
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+}
 
-/* ── Board ── */
-.board-wrap{display:flex;align-items:center;gap:8px}
-.eval-bar-wrap{display:flex;flex-direction:column;height:var(--board-size,480px);width:18px;border-radius:9px;overflow:hidden;border:1px solid var(--border);position:relative}
-.eval-bar-black{background:#1e1e2e;transition:height .6s ease}
-.eval-bar-white{background:#f0d9b5;transition:height .6s ease}
-.eval-score{font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);text-align:center;margin-top:4px}
-.board-col{display:flex;flex-direction:column;gap:4px}
-.coords-row{display:flex;gap:0}
-.board-container{position:relative;border-radius:4px;overflow:hidden;box-shadow:0 0 0 2px var(--border),0 20px 60px rgba(0,0,0,.7)}
-.board-grid{display:grid;grid-template-columns:repeat(8,1fr)}
-.square{width:60px;height:60px;display:flex;align-items:center;justify-content:center;font-size:42px;cursor:pointer;position:relative;transition:filter .1s}
-.square:hover{filter:brightness(1.15)}
-.square.light{background:var(--white-sq)}
-.square.dark{background:var(--dark-sq)}
-.square.selected{box-shadow:inset 0 0 0 4px rgba(124,101,247,.9)}
-.square.last-from.light,.square.last-to.light{background:var(--last-move-light)}
-.square.last-from.dark,.square.last-to.dark{background:var(--last-move-dark)}
-.square.in-check{box-shadow:inset 0 0 0 4px var(--red),0 0 20px var(--red)}
-.hint-dot{position:absolute;width:24px;height:24px;border-radius:50%;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;opacity:.85}
-.legal-dot{position:absolute;width:16px;height:16px;border-radius:50%;background:rgba(124,101,247,.7);top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none}
-.coord-file{width:60px;text-align:center;font-size:10px;color:var(--muted);font-family:'Space Mono',monospace}
-.coord-rank{width:16px;height:60px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--muted);font-family:'Space Mono',monospace}
-.ranks-col{display:flex;flex-direction:column}
-.files-row{display:flex;margin-left:20px}
+/* Animated neon grid background */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image:
+    linear-gradient(var(--grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+  background-size: 60px 60px;
+  animation: gridScroll 20s linear infinite;
+  z-index: -2;
+  pointer-events: none;
+}
 
-/* ── Captured pieces ── */
-.captured{display:flex;flex-wrap:wrap;gap:1px;min-height:22px;font-size:18px}
+/* Subtle scanline overlay */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 255, 200, 0.01) 0px,
+    transparent 2px,
+    transparent 4px
+  );
+  z-index: -1;
+  pointer-events: none;
+}
 
-/* ── Sections ── */
-.section-label{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:8px}
-.btn{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid;transition:all .15s;font-family:'DM Sans',sans-serif}
-.btn-primary{background:var(--accent);color:white;border-color:var(--accent)}
-.btn-primary:hover{background:var(--accent2)}
-.btn-ghost{background:transparent;color:var(--text);border-color:var(--border)}
-.btn-ghost:hover{background:var(--surface2)}
-.btn-danger{background:transparent;color:var(--red);border-color:var(--red)}
-.btn-danger:hover{background:rgba(239,68,68,.1)}
-.btn:disabled{opacity:.4;cursor:not-allowed}
-select{background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;width:100%}
+@keyframes gridScroll {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(60px, 60px); }
+}
 
-/* ── Hints ── */
-.hint-card{border:1px solid var(--border);border-radius:10px;padding:10px 12px;cursor:pointer;transition:all .15s;background:var(--surface2)}
-.hint-card:hover{border-color:var(--accent);background:rgba(124,106,247,.08)}
-.hint-rank{font-size:10px;font-family:'Space Mono',monospace;margin-bottom:4px}
-.hint-rank.r1{color:var(--green)} .hint-rank.r2{color:var(--yellow)} .hint-rank.r3{color:var(--text)}
-.hint-move{font-size:18px;font-family:'Space Mono',monospace;font-weight:700;color:var(--text)}
-.hint-score{font-size:12px;color:var(--muted);margin-top:2px}
-.hint-cont{font-size:11px;color:var(--muted);margin-top:4px;font-family:'Space Mono',monospace}
+/* App structure */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  position: relative;
+}
 
-/* ── Engine stats ── */
-.stat-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border)}
-.stat-row:last-child{border-bottom:none}
-.stat-label{font-size:12px;color:var(--muted)}
-.stat-value{font-size:12px;font-family:'Space Mono',monospace;color:var(--accent2)}
-.thinking-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 1s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
+.header {
+  height: 64px;
+  background: rgba(10, 10, 15, 0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  z-index: 100;
+  box-shadow: 0 1px 20px rgba(0, 255, 200, 0.06);
+}
 
-/* ── Move list ── */
-.move-list{font-size:12px;font-family:'Space Mono',monospace;display:flex;flex-direction:column;gap:2px;max-height:180px;overflow-y:auto}
-.move-row{display:flex;gap:8px;padding:2px 4px;border-radius:4px}
-.move-row:hover{background:var(--surface2)}
-.move-num{color:var(--muted);width:24px}
-.move-san{color:var(--text);cursor:pointer;padding:0 4px;border-radius:3px}
-.move-san:hover{background:var(--accent);color:white}
+.logo-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
 
-/* ── Status banner ── */
-.status{padding:8px 12px;border-radius:8px;font-size:13px;font-weight:500;text-align:center}
-.status.check{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3)}
-.status.thinking{background:rgba(124,101,247,.1);color:var(--accent2);border:1px solid rgba(124,101,247,.2)}
-.status.info{background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
-.status.win{background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.3)}
+.logo-icon {
+  font-size: 24px;
+  color: var(--accent);
+  text-shadow: 0 0 10px var(--accent-glow);
+}
 
-/* ── Piece unicode ── */
-.piece{user-select:none;line-height:1;pointer-events:none}
+.logo-text {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  text-shadow: 0 0 8px rgba(0, 255, 200, 0.4);
+}
 
-/* ── PV line ── */
-.pv-line{font-size:11px;font-family:'Space Mono',monospace;color:var(--muted);word-break:break-all;line-height:1.6;padding:6px 8px;background:var(--surface2);border-radius:6px;border:1px solid var(--border)}
+.logo-text span {
+  color: var(--magenta);
+  text-shadow: 0 0 8px rgba(255, 45, 149, 0.4);
+}
 
-/* ── Connection status ── */
-.conn-dot{width:8px;height:8px;border-radius:50%}
-.conn-dot.connected{background:var(--green)}
-.conn-dot.disconnected{background:var(--red)}
-.conn-dot.connecting{background:var(--yellow);animation:pulse 1s infinite}
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.conn-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.conn-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.conn-dot.connected {
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+}
+
+.conn-dot.disconnected {
+  background: var(--red);
+  box-shadow: 0 0 8px var(--red);
+}
+
+.conn-dot.connecting {
+  background: var(--yellow);
+  box-shadow: 0 0 8px var(--yellow);
+  animation: pulse 1s infinite;
+}
+
+/* Welcome Overlay */
+.welcome-overlay {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 40%, rgba(0, 255, 200, 0.04) 0%, transparent 50%),
+              radial-gradient(circle at 80% 80%, rgba(255, 45, 149, 0.03) 0%, transparent 40%);
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.welcome-card {
+  width: 540px;
+  background: rgba(10, 10, 15, 0.92);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 255, 200, 0.15);
+  border-radius: 16px;
+  padding: 40px;
+  box-shadow: 0 0 40px rgba(0, 255, 200, 0.06), 0 30px 60px rgba(0, 0, 0, 0.7), inset 0 0 60px rgba(0, 255, 200, 0.02);
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.welcome-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-shadow: 0 0 10px rgba(0, 255, 200, 0.4);
+}
+
+.welcome-subtitle {
+  color: var(--text-muted);
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.5;
+  margin-top: -12px;
+}
+
+.setup-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.section-label {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--accent);
+  text-shadow: 0 0 5px rgba(0, 255, 200, 0.3);
+  font-weight: 700;
+}
+
+/* Difficulty selection cards */
+.difficulty-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.difficulty-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.difficulty-card:hover {
+  background: rgba(0, 255, 200, 0.06);
+  border-color: rgba(0, 255, 200, 0.25);
+  transform: translateY(-2px);
+}
+
+.difficulty-card.active {
+  background: rgba(0, 255, 200, 0.1);
+  border-color: var(--accent);
+  box-shadow: 0 0 15px rgba(0, 255, 200, 0.12);
+}
+
+.difficulty-name {
+  font-weight: 600;
+  font-size: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.difficulty-elo {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-light);
+}
+
+.difficulty-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* Color selection */
+.color-selector {
+  display: flex;
+  gap: 16px;
+}
+
+.color-option {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.color-option:hover {
+  background: rgba(0, 255, 200, 0.04);
+}
+
+.color-option.active {
+  border-color: var(--accent);
+  background: rgba(0, 255, 200, 0.08);
+  color: var(--accent-light);
+}
+
+.color-preview {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.color-preview.white {
+  background: #ffffff;
+}
+
+.color-preview.black {
+  background: #181825;
+}
+
+.btn-play {
+  font-family: 'Orbitron', sans-serif;
+  background: linear-gradient(135deg, #00ffc8 0%, #00e5ff 100%);
+  color: #0a0a0f;
+  border: none;
+  border-radius: 12px;
+  padding: 16px;
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 0 25px rgba(0, 255, 200, 0.25), 0 8px 20px rgba(0, 0, 0, 0.4);
+  text-shadow: none;
+}
+
+.btn-play:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 0 35px rgba(0, 255, 200, 0.4), 0 10px 25px rgba(0, 0, 0, 0.5);
+  filter: brightness(1.1);
+}
+
+.btn-play:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Main Dashboard layout */
+.main-content {
+  display: grid;
+  grid-template-columns: 280px 1fr 320px;
+  flex: 1;
+  height: calc(100vh - 64px);
+  overflow: hidden;
+}
+
+/* Sidebar styling */
+.sidebar {
+  background: rgba(10, 10, 15, 0.75);
+  backdrop-filter: blur(16px);
+  border-right: 1px solid var(--border);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  overflow-y: auto;
+}
+
+.sidebar.right {
+  border-right: none;
+  border-left: 1px solid var(--border);
+}
+
+/* Badges & Widgets */
+.difficulty-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 255, 200, 0.08);
+  border: 1px solid rgba(0, 255, 200, 0.2);
+  color: var(--accent-light);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Status banner */
+.status {
+  padding: 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.status.info {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--text-muted);
+}
+
+.status.thinking {
+  background: rgba(0, 229, 255, 0.06);
+  border: 1px solid rgba(0, 229, 255, 0.2);
+  color: var(--cyan);
+}
+
+.status.check {
+  background: rgba(255, 60, 60, 0.08);
+  border: 1px solid rgba(255, 60, 60, 0.2);
+  color: var(--red);
+  font-weight: bold;
+}
+
+.status.win {
+  background: rgba(57, 255, 20, 0.06);
+  border: 1px solid rgba(57, 255, 20, 0.2);
+  color: var(--green);
+  font-weight: bold;
+  animation: pulse-green 2s infinite;
+}
+
+.thinking-spinner {
+  color: var(--cyan);
+}
+
+/* Buttons */
+.btn {
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid transparent;
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.btn-active-neon {
+  background: var(--accent);
+  color: var(--bg-deep);
+  border-color: var(--accent);
+  box-shadow: 0 0 15px var(--accent-glow);
+  font-weight: 700;
+}
+
+.btn-active-neon:hover {
+  background: var(--accent-light);
+  box-shadow: 0 0 20px var(--accent-glow);
+}
+
+.btn-danger {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.2);
+  color: var(--red);
+}
+
+.btn-danger:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: var(--red);
+}
+
+.btn-small {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  background: var(--accent);
+  color: #0a0a0f;
+  font-weight: 700;
+  border: none;
+  font-family: 'Space Mono', monospace;
+}
+
+.btn-small:hover:not(:disabled) {
+  background: var(--accent-light);
+}
+
+.btn-small:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.sidebar-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Board Area (Center) */
+.board-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  gap: 12px;
+  background: radial-gradient(circle at center, rgba(0, 255, 200, 0.02) 0%, transparent 70%);
+}
+
+.player-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 480px;
+  padding: 10px 16px;
+  background: rgba(10, 10, 15, 0.6);
+  border: 1px solid rgba(0, 255, 200, 0.08);
+  border-radius: 12px;
+}
+
+.player-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.player-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(0, 255, 200, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-light);
+  font-size: 14px;
+}
+
+.player-name {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.captured-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.captured-list {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: wrap;
+}
+
+.captured-piece-wrapper {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.captured-piece-wrapper .piece-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.material-diff {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--green);
+  background: rgba(16, 185, 129, 0.15);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+/* Chess Board container and elements */
+.board-container {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 0 30px rgba(0, 255, 200, 0.08), 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(0, 255, 200, 0.1);
+}
+
+.board-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  width: 480px;
+  height: 480px;
+}
+
+.square {
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Slate board theme (only theme) */
+.square.light { background: #eae9e4; }
+.square.dark { background: #5e6d8a; }
+.theme-slate .square.light { background: #eae9e4; }
+.theme-slate .square.dark { background: #5e6d8a; }
+.theme-slate .coord.dark-text { color: #3b4252; }
+.theme-slate .coord.light-text { color: #eceff4; }
+
+.square:hover {
+  filter: brightness(1.08) contrast(0.95);
+}
+
+.square.selected {
+  box-shadow: inset 0 0 0 4px var(--cyan);
+}
+
+.square.last-from {
+  background: rgba(0, 255, 200, 0.25) !important;
+}
+
+.square.last-to {
+  background: rgba(0, 255, 200, 0.35) !important;
+}
+
+.square.in-check {
+  background: rgba(255, 60, 60, 0.35) !important;
+  box-shadow: inset 0 0 0 4px var(--red);
+}
+
+/* Piece SVG Rendering */
+.piece-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.piece-img {
+  width: 85%;
+  height: 85%;
+  object-fit: contain;
+  transition: transform 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25));
+}
+
+.square:hover .piece-img {
+  transform: scale(1.08);
+}
+
+.piece-unicode {
+  font-size: 44px;
+  line-height: 1;
+}
+
+/* Legal Move Highlights */
+.legal-dot {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: rgba(0, 255, 200, 0.4);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  box-shadow: 0 0 8px rgba(0, 255, 200, 0.2);
+}
+
+.hint-dot {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+/* Coordinates */
+.coord {
+  position: absolute;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  pointer-events: none;
+  opacity: 0.65;
+}
+
+.coord-rank {
+  top: 3px;
+  left: 5px;
+}
+
+.coord-file {
+  bottom: 3px;
+  right: 5px;
+}
+
+.coord.dark-text {
+  color: #3b4252;
+}
+
+.coord.light-text {
+  color: #eceff4;
+}
+
+/* Eval Bar */
+.eval-bar-wrap {
+  display: flex;
+  flex-direction: column;
+  height: 480px;
+  width: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  position: relative;
+  background: #11111b;
+}
+
+.eval-bar-black {
+  background: #11111b;
+  transition: height 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.eval-bar-white {
+  background: linear-gradient(to bottom, #f8fafc, #cbd5e1);
+  transition: height 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+  box-shadow: 0 -2px 10px rgba(255, 255, 255, 0.3);
+}
+
+.eval-score {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+  font-weight: bold;
+}
+
+/* Right Sidebar Sections */
+.sidebar-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Stockfish Hint Cards */
+.hints-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hint-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hint-card:hover {
+  background: rgba(0, 255, 200, 0.05);
+  border-color: rgba(0, 255, 200, 0.2);
+  transform: translateX(2px);
+}
+
+.hint-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.hint-rank-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.hint-card.q-best { border-left: 3px solid var(--green); }
+.hint-card.q-best .hint-rank-label { background: rgba(16, 185, 129, 0.15); color: var(--green); }
+
+.hint-card.q-good { border-left: 3px solid var(--yellow); }
+.hint-card.q-good .hint-rank-label { background: rgba(245, 158, 11, 0.15); color: var(--yellow); }
+
+.hint-card.q-ok { border-left: 3px solid var(--text-muted); }
+.hint-card.q-ok .hint-rank-label { background: rgba(255, 255, 255, 0.05); color: var(--text-muted); }
+
+.hint-eval-score {
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.hint-move-text {
+  font-size: 16px;
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.hint-continuation {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: 'Space Mono', monospace;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+/* Sidebar placeholder when no data */
+.sidebar-placeholder {
+  border: 1px dashed rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 24px;
+  text-align: center;
+  color: var(--text-muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.sidebar-placeholder.small {
+  padding: 12px;
+}
+
+.placeholder-icon {
+  font-size: 24px;
+  opacity: 0.5;
+}
+
+/* Engine HUD stats */
+.stats-hud {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.hud-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.hud-row:last-child {
+  border-bottom: none;
+}
+
+.hud-label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.hud-val {
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--cyan);
+}
+
+.pv-container {
+  margin-top: 8px;
+  background: rgba(0, 255, 200, 0.03);
+  border: 1px solid rgba(0, 255, 200, 0.08);
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pv-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 9px;
+  text-transform: uppercase;
+  color: var(--accent-light);
+  font-weight: 700;
+}
+
+.pv-text {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+  word-break: break-all;
+  line-height: 1.4;
+}
+
+/* Move history table */
+.move-history-container {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.move-history-table {
+  display: flex;
+  flex-direction: column;
+}
+
+.move-history-row {
+  display: grid;
+  grid-template-columns: 40px 1fr 1fr;
+  padding: 8px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+}
+
+.move-history-row:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.move-idx {
+  color: var(--text-muted);
+}
+
+.move-val {
+  color: var(--text);
+  font-weight: 500;
+  cursor: pointer;
+  padding: 1px 6px;
+  border-radius: 4px;
+  display: inline-block;
+  width: fit-content;
+}
+
+.move-val:hover {
+  background: var(--accent);
+  color: #0a0a0f;
+}
+
+/* Animations */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+@keyframes pulse-green {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(57, 255, 20, 0.4); }
+  50% { box-shadow: 0 0 10px 4px rgba(57, 255, 20, 0.15); }
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+  .main-content {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    height: auto;
+    overflow-y: auto;
+  }
+  .sidebar {
+    border-left: none;
+    border-bottom: 1px solid var(--border);
+    height: auto;
+    overflow-y: visible;
+  }
+  .board-area {
+    padding: 40px 20px;
+  }
+  .player-bar, .board-grid {
+    width: 100%;
+    max-width: 480px;
+  }
+  .square {
+    width: 12.5vw;
+    height: 12.5vw;
+    max-width: 60px;
+    max-height: 60px;
+  }
+  .board-grid {
+    height: auto;
+    aspect-ratio: 1 / 1;
+  }
+  .eval-bar-wrap {
+    height: calc(100vw - 40px);
+    max-height: 480px;
+  }
+}
 </style>
 </head>
 <body>
@@ -134,12 +1052,45 @@ select{background:var(--surface2);color:var(--text);border:1px solid var(--borde
 <script type="text/babel">
 const {useState,useEffect,useRef,useCallback}=React;
 
-// ─── Chess logic (pure JS, no lib needed for display) ─────────────────────────
-const PIECES={
+// Fallback Unicode Pieces
+const UNICODE_PIECES={
   'P':'♙','N':'♘','B':'♗','R':'♖','Q':'♕','K':'♔',
   'p':'♟','n':'♞','b':'♝','r':'♜','q':'♛','k':'♚'
 };
-const PIECE_VALUES={p:1,n:3,b:3,r:5,q:9};
+
+const getCapturedPieces = (currentFen) => {
+  const startCount = {
+    'p': 8, 'n': 2, 'b': 2, 'r': 2, 'q': 1, 'k': 1,
+    'P': 8, 'N': 2, 'B': 2, 'R': 2, 'Q': 1, 'K': 1
+  };
+  const currentCount = {
+    'p': 0, 'n': 0, 'b': 0, 'r': 0, 'q': 0, 'k': 0,
+    'P': 0, 'N': 0, 'B': 0, 'R': 0, 'Q': 0, 'K': 0
+  };
+  
+  const [boardPart] = currentFen.split(' ');
+  for (const char of boardPart) {
+    if (startCount[char] !== undefined) {
+      currentCount[char]++;
+    }
+  }
+  
+  const captured = [];
+  for (const piece in startCount) {
+    const diff = startCount[piece] - currentCount[piece];
+    for (let i = 0; i < diff; i++) {
+      captured.push(piece);
+    }
+  }
+  return captured;
+};
+
+const getMaterialScore = (capWhite, capBlack) => {
+  const val = { 'p': 1, 'n': 3, 'b': 3, 'r': 5, 'q': 9, 'P': 1, 'N': 3, 'B': 3, 'R': 5, 'Q': 9 };
+  let whiteSum = capBlack.reduce((acc, p) => acc + val[p], 0); // pieces captured by white
+  let blackSum = capWhite.reduce((acc, p) => acc + val[p], 0); // pieces captured by black
+  return whiteSum - blackSum;
+};
 
 function parseFen(fen){
   const [pos,turn,castle,ep]=fen.split(' ');
@@ -166,21 +1117,13 @@ function uciToSquares(uci){
   return[coordToSquare(uci.slice(0,2)),coordToSquare(uci.slice(2,4))];
 }
 
-function getCaptured(fen,prevFen){
-  // Simple: compare piece counts
-  const count=(f,c)=>(f.split('').filter(x=>x===c).length);
-  const pieces='pnbrqPNBRQ';
-  const captured=[];
-  if(!prevFen)return captured;
-  for(const p of pieces){
-    const diff=count(prevFen,p)-count(fen,p);
-    for(let i=0;i<diff;i++)captured.push(p);
-  }
-  return captured;
-}
-
-// ─── WebSocket hook ──────────────────────────────────────────────────────────
-const WS_URL=`ws://localhost:8000/ws/${Math.random().toString(36).slice(2)}`;
+const getWsUrl = () => {
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const host = window.location.host || '127.0.0.1:8000';
+  const session = Math.random().toString(36).slice(2);
+  return `${protocol}//${host}/ws/${session}`;
+};
+const WS_URL = getWsUrl();
 
 function useChessWS(){
   const ws=useRef(null);
@@ -213,11 +1156,38 @@ function useChessWS(){
   return{send,connected,handlers:handlers.current};
 }
 
+// ─── Piece Component with SVG and Fallback ──────────────────────────────────
+const Piece = ({ type }) => {
+  if (!type) return null;
+  const isWhite = type === type.toUpperCase();
+  const symbol = type.toUpperCase();
+  const filename = `${isWhite ? 'w' : 'b'}${symbol}.svg`;
+  const url = `https://lichess1.org/assets/piece/cburnett/${filename}`;
+
+  const [hasError, setHasError] = useState(false);
+
+  return (
+    <div className="piece-container">
+      {!hasError ? (
+        <img 
+          src={url} 
+          alt={type} 
+          className="piece-img" 
+          onError={() => setHasError(true)}
+        />
+      ) : (
+        <span className="piece-unicode" style={{ color: isWhite ? '#fff' : '#111' }}>
+          {UNICODE_PIECES[type]}
+        </span>
+      )}
+    </div>
+  );
+};
+
 // ─── Eval bar component ───────────────────────────────────────────────────────
 function EvalBar({evalBar,boardSize}){
   const cp=evalBar?.score_cp??0;
   const clamped=Math.max(-600,Math.min(600,cp));
-  // white % = 50 + advantage, scaled to 0-100
   const whitePct=Math.round(50+(clamped/600)*45);
   const blackPct=100-whitePct;
   const label=evalBar?.type==='mate'
@@ -225,78 +1195,77 @@ function EvalBar({evalBar,boardSize}){
     :`${cp>=0?'+':''}${(cp/100).toFixed(1)}`;
 
   return(
-    <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
+    <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:8}}>
       <div className="eval-bar-wrap" style={{height:boardSize}}>
         <div className="eval-bar-black" style={{height:`${blackPct}%`}}/>
         <div className="eval-bar-white" style={{height:`${whitePct}%`}}/>
       </div>
-      <span className="eval-score mono">{label}</span>
+      <span className="eval-score">{label}</span>
     </div>
   );
 }
 
 // ─── Board component ──────────────────────────────────────────────────────────
-function ChessBoard({fen,lastMove,hints,legalMoves,onSquareClick,selected,flipped,inCheck,humanColor}){
+function ChessBoard({fen,lastMove,hints,legalMoves,onSquareClick,selected,flipped,inCheck,humanColor,theme}){
   const{board}=parseFen(fen);
   const [lastFrom,lastTo]=uciToSquares(lastMove);
-  const hintColors={1:'rgba(34,197,94,.75)',2:'rgba(234,179,8,.7)',3:'rgba(249,115,22,.6)'};
+  const hintColors={1:'rgba(16,185,129,0.75)',2:'rgba(245,158,11,0.7)',3:'rgba(239,68,68,0.6)'};
   const hintMap={};
   hints.forEach(h=>{ const[,to]=uciToSquares(h.move); if(to!==null)hintMap[to]=h.rank; });
 
   const ranks=flipped?[0,1,2,3,4,5,6,7]:[7,6,5,4,3,2,1,0];
   const files=flipped?[7,6,5,4,3,2,1,0]:[0,1,2,3,4,5,6,7];
 
-  const kingPos=board.indexOf(humanColor==='white'?'k':'K');
-  // Find enemy king in check
-  const whiteKing=board.indexOf('K');
-  const blackKing=board.indexOf('k');
-
   return(
-    <div className="board-col">
-      <div style={{display:'flex'}}>
-        <div className="ranks-col">
-          {ranks.map(r=>(
-            <div className="coord-rank" key={r}>{flipped?r+1:8-r}</div>
-          ))}
-        </div>
-        <div className="board-container">
-          <div className="board-grid" style={{width:480,height:480}}>
-            {ranks.flatMap(r=>files.map(f=>{
-              const sq=r*8+f;
-              const isLight=(r+f)%2===0;
-              const piece=board[sq];
-              const isSelected=selected===sq;
-              const isLastFrom=lastFrom===sq;
-              const isLastTo=lastTo===sq;
-              const isLegal=legalMoves.includes(sq);
-              const hintRank=hintMap[sq];
-              const isInCheckSq=(inCheck&&piece==='k'&&humanColor==='white')||(inCheck&&piece==='K'&&humanColor==='black');
-              return(
-                <div
-                  key={sq}
-                  className={['square',
-                    isLight?'light':'dark',
-                    isSelected?'selected':'',
-                    isLastFrom?'last-from':'',
-                    isLastTo?'last-to':'',
-                    isInCheckSq?'in-check':'',
-                  ].join(' ')}
-                  onClick={()=>onSquareClick(sq)}
-                >
-                  {piece&&<span className="piece">{PIECES[piece]}</span>}
-                  {isLegal&&!piece&&<div className="legal-dot"/>}
-                  {isLegal&&piece&&<div style={{position:'absolute',inset:0,boxShadow:'inset 0 0 0 4px rgba(124,101,247,.7)',pointerEvents:'none'}}/>}
-                  {hintRank&&<div className="hint-dot" style={{background:hintColors[hintRank],boxShadow:`0 0 8px ${hintColors[hintRank]}`}}/>}
-                </div>
-              );
-            }))}
-          </div>
-        </div>
-      </div>
-      <div className="files-row">
-        {files.map(f=>(
-          <div className="coord-file" key={f}>{String.fromCharCode(97+f)}</div>
-        ))}
+    <div className={`board-container theme-${theme}`}>
+      <div className="board-grid">
+        {ranks.flatMap(r=>files.map(f=>{
+          const sq=r*8+f;
+          const isLight=(r+f)%2===0;
+          const piece=board[sq];
+          const isSelected=selected===sq;
+          const isLastFrom=lastFrom===sq;
+          const isLastTo=lastTo===sq;
+          const isLegal=legalMoves.includes(sq);
+          const hintRank=hintMap[sq];
+          const isInCheckSq=(inCheck&&piece==='k'&&humanColor==='white')||(inCheck&&piece==='K'&&humanColor==='black');
+          
+          const showRankLabel = f === files[0];
+          const showFileLabel = r === ranks[7];
+          const rankLabel = flipped ? (r + 1) : (8 - r);
+          const fileLabel = String.fromCharCode(97 + f);
+
+          return(
+            <div
+              key={sq}
+              className={[
+                'square',
+                isLight?'light':'dark',
+                isSelected?'selected':'',
+                isLastFrom?'last-from':'',
+                isLastTo?'last-to':'',
+                isInCheckSq?'in-check':'',
+              ].join(' ')}
+              onClick={()=>onSquareClick(sq)}
+            >
+              {piece&&<Piece type={piece} />}
+              {isLegal&&!piece&&<div className="legal-dot"/>}
+              {isLegal&&piece&&<div style={{position:'absolute',inset:0,boxShadow:'inset 0 0 0 4px rgba(139,92,246,0.7)',pointerEvents:'none'}}/>}
+              {hintRank&&<div className="hint-dot" style={{background:hintColors[hintRank],boxShadow:`0 0 10px ${hintColors[hintRank]}`}}/>}
+              
+              {showRankLabel && (
+                <span className={`coord coord-rank ${isLight ? 'dark-text' : 'light-text'}`}>
+                  {rankLabel}
+                </span>
+              )}
+              {showFileLabel && (
+                <span className={`coord coord-file ${isLight ? 'dark-text' : 'light-text'}`}>
+                  {fileLabel}
+                </span>
+              )}
+            </div>
+          );
+        }))}
       </div>
     </div>
   );
@@ -308,7 +1277,14 @@ function App(){
   const[fen,setFen]=useState('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
   const[gameState,setGameState]=useState(null);
   const[hints,setHints]=useState([]);
+  const[hintError,setHintError]=useState(null);
   const[showHints,setShowHints]=useState(false);
+  const[autoHints,setAutoHints]=useState(false);
+  const[boardTheme,setBoardTheme]=useState('slate');
+  const[customDepth,setCustomDepth]=useState(8);
+  const[customMovetime,setCustomMovetime]=useState(2000);
+  const[consoleLogs,setConsoleLogs]=useState([]);
+  const consoleRef=useRef(null);
   const[evalBar,setEvalBar]=useState({score_cp:0,type:'cp'});
   const[engineInfo,setEngineInfo]=useState(null);
   const[thinking,setThinking]=useState(false);
@@ -333,6 +1309,8 @@ function App(){
       setEvalBar(msg.eval_bar);
       setMoveHistory([]);
       setHints([]);
+      setHintError(null);
+      setConsoleLogs([]);
       setLastMove(null);
       setSelected(null);
       setLegalMoves([]);
@@ -340,6 +1318,10 @@ function App(){
       setStatusMsg('Game started — your turn!');
       setStatusType('info');
       prevFen.current=msg.state.fen;
+      
+      const cap = getCapturedPieces(msg.state.fen);
+      setCapturedBlack(cap.filter(p => p === p.toLowerCase()));
+      setCapturedWhite(cap.filter(p => p === p.toUpperCase()));
     };
     handlers.move_made=(msg)=>{
       prevFen.current=fen;
@@ -350,16 +1332,37 @@ function App(){
       setSelected(null);
       setLegalMoves([]);
       setHints([]);
+      setHintError(null);
       setShowHints(false);
       if(msg.engine_info) setEngineInfo(msg.engine_info);
       setMoveHistory(h=>[...h,{move:msg.move,by:msg.by}]);
       if(msg.state.is_check) { setStatusMsg('Check!'); setStatusType('check'); }
       else if(msg.by==='ai') { setStatusMsg('Your turn'); setStatusType('info'); }
       else { setStatusMsg('AI is thinking...'); setStatusType('thinking'); }
+
+      const cap = getCapturedPieces(msg.state.fen);
+      setCapturedBlack(cap.filter(p => p === p.toLowerCase()));
+      setCapturedWhite(cap.filter(p => p === p.toUpperCase()));
     };
     handlers.ai_thinking=(msg)=>{ setThinking(msg.thinking); if(!msg.thinking&&gameState&&!gameState.is_checkmate)setStatusMsg('Your turn'); };
-    handlers.hints=(msg)=>{ setHints(msg.hints||[]); setShowHints(true); };
+    handlers.hints=(msg)=>{
+      if (msg.error) {
+        setHintError(msg.error);
+        setHints([]);
+      } else {
+        setHints(msg.hints||[]);
+        setHintError(null);
+      }
+      setShowHints(true);
+    };
     handlers.eval_update=(msg)=>setEvalBar(msg.eval_bar);
+    handlers.engine_log=(msg)=>{
+      setConsoleLogs(c => {
+        const next = [...c, msg.log];
+        if (next.length > 100) next.shift();
+        return next;
+      });
+    };
     handlers.game_over=(msg)=>{
       setGameState(msg.state);
       if(msg.state.is_checkmate){
@@ -375,8 +1378,18 @@ function App(){
     handlers.error=(msg)=>console.warn('Server error:',msg.msg);
   });
 
+  useEffect(() => {
+    if (consoleRef.current) {
+      consoleRef.current.scrollTop = consoleRef.current.scrollHeight;
+    }
+  }, [consoleLogs]);
+
   const startGame=()=>{
-    send({action:'new_game',difficulty,human_color:humanColor});
+    send({
+      action:'new_game',
+      difficulty,
+      human_color:humanColor
+    });
   };
 
   const handleSquareClick=(sq)=>{
@@ -389,10 +1402,8 @@ function App(){
 
     if(selected!==null){
       if(legalMoves.includes(sq)){
-        // Make move
         let uci=squareToCoord(selected)+squareToCoord(sq);
         const p=board[selected];
-        // Promotion check (simplified: always promote to queen)
         if((p==='P'&&sq>=56)||(p==='p'&&sq<=7)) uci+='q';
         send({action:'human_move',move:uci});
         setSelected(null);setLegalMoves([]);
@@ -411,8 +1422,6 @@ function App(){
   };
 
   const computeLegalMoves=(sq,board,isWhite)=>{
-    // Simple highlight: show all squares the piece could move to
-    // Real legality checked by engine; this is just UI feedback
     const moves=[];
     const piece=board[sq]?.toLowerCase();
     const file=sq&7,rank=sq>>3;
@@ -444,9 +1453,22 @@ function App(){
     } else if(piece==='b'){slide(1,1);slide(1,-1);slide(-1,1);slide(-1,-1);}
     else if(piece==='r'){slide(1,0);slide(-1,0);slide(0,1);slide(0,-1);}
     else if(piece==='q'){slide(1,1);slide(1,-1);slide(-1,1);slide(-1,-1);slide(1,0);slide(-1,0);slide(0,1);slide(0,-1);}
-    else if(piece==='k'){[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]].forEach(([df,dr])=>{
-      const nf=file+df,nr=rank+dr;if(nf>=0&&nf<8&&nr>=0&&nr<8)addSq(nr*8+nf);
-    });}
+    else if(piece==='k'){
+      [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]].forEach(([df,dr])=>{
+        const nf=file+df,nr=rank+dr;if(nf>=0&&nf<8&&nr>=0&&nr<8)addSq(nr*8+nf);
+      });
+      const castle = fen.split(' ')[2] || '';
+      const inCheck = gameState?.is_check || false;
+      if (!inCheck) {
+        if (isWhite && sq === 4) {
+          if (castle.includes('K') && !board[5] && !board[6]) moves.push(6);
+          if (castle.includes('Q') && !board[3] && !board[2] && !board[1]) moves.push(2);
+        } else if (!isWhite && sq === 60) {
+          if (castle.includes('k') && !board[61] && !board[62]) moves.push(62);
+          if (castle.includes('q') && !board[59] && !board[58] && !board[57]) moves.push(58);
+        }
+      }
+    }
     setLegalMoves(moves);
   };
 
@@ -461,175 +1483,354 @@ function App(){
   const isMyTurn=gameState&&!thinking&&(
     (gameState.turn==='white'&&humanColor==='white')||(gameState.turn==='black'&&humanColor==='black')
   );
+
+  useEffect(() => {
+    if (isMyTurn && autoHints) {
+      requestHints();
+    }
+  }, [isMyTurn, autoHints]);
   const flipped=humanColor==='black';
 
-  return(
-    <div className="app">
+  return (
+    <div className="app-container">
       {/* Header */}
-      <div className="header">
-        <div className="logo">Chess<span>Mind</span></div>
-        <div style={{fontSize:12,color:'var(--muted)',fontFamily:'Space Mono'}}>
-          Alpha-Beta engine · depth {difficulty==='beginner'?2:difficulty==='intermediate'?5:difficulty==='hard'?8:12}
+      <header className="header">
+        <div className="logo-container">
+          <i className="fa-solid fa-brain logo-icon"></i>
+          <div className="logo-text">Chess<span>Mind</span></div>
         </div>
-        <div className="header-right" style={{display:'flex',gap:10,alignItems:'center'}}>
-          <div className={`conn-dot ${connected===true?'connected':connected==='connecting'?'connecting':'disconnected'}`}/>
-          <span style={{fontSize:12,color:'var(--muted)'}}>
-            {connected===true?'Connected':connected==='connecting'?'Connecting...':'Disconnected'}
-          </span>
+        <div style={{ fontSize: 13, color: 'var(--accent)', fontFamily: 'Space Mono', textShadow: '0 0 10px rgba(0, 255, 200, 0.3)' }}>
+          C++ Minimax Engine · Alpha-Beta Pruning
         </div>
-      </div>
+        <div className="header-right">
+          <div className="conn-status">
+            <div className={`conn-dot ${connected===true?'connected':connected==='connecting'?'connecting':'disconnected'}`}/>
+            <span>
+              {connected===true?'Engine Live':connected==='connecting'?'Connecting...':'Offline'}
+            </span>
+          </div>
+        </div>
+      </header>
 
-      {/* Left panel */}
-      <div className="left-panel">
-        <div>
-          <div className="section-label">Setup</div>
-          <div style={{display:'flex',flexDirection:'column',gap:8}}>
-            <select value={difficulty} onChange={e=>setDifficulty(e.target.value)} disabled={thinking}>
-              <option value="beginner">Beginner (~800)</option>
-              <option value="intermediate">Intermediate (~1400)</option>
-              <option value="hard">Hard (~1800)</option>
-              <option value="expert">Expert (~2100)</option>
-            </select>
-            <select value={humanColor} onChange={e=>setHumanColor(e.target.value)} disabled={thinking}>
-              <option value="white">Play as White</option>
-              <option value="black">Play as Black</option>
-            </select>
-            <button className="btn btn-primary" onClick={startGame} disabled={thinking||connected!==true}>
-              {gameStarted?'New Game':'Start Game'}
+      {/* Main Content Area */}
+      {!gameStarted ? (
+        <div className="welcome-overlay">
+          <div className="welcome-card">
+            <h2 className="welcome-title"><i className="fa-solid fa-chess logo-icon"></i> ChessMind</h2>
+            <p className="welcome-subtitle">Challenge a custom C++ minimax chess engine with real-time positional evaluations and Stockfish hints.</p>
+            
+            <div className="setup-section">
+              <label className="section-label">Engine Difficulty</label>
+              <div className="difficulty-grid">
+                {[
+                  { id: 'beginner', name: 'Beginner', elo: '800', desc: 'Depth 2 • Quick decisions' },
+                  { id: 'intermediate', name: 'Intermediate', elo: '1400', desc: 'Depth 5 • Standard play' },
+                  { id: 'hard', name: 'Hard', elo: '1800', desc: 'Depth 8 • Challenging' },
+                  { id: 'expert', name: 'Expert', elo: '2100', desc: 'Depth 12 • Chess Master' }
+                ].map(d => (
+                  <div 
+                    key={d.id} 
+                    className={`difficulty-card ${difficulty === d.id ? 'active' : ''}`}
+                    onClick={() => setDifficulty(d.id)}
+                  >
+                    <span className="difficulty-name">{d.name} <span className="difficulty-elo">~{d.elo} ELO</span></span>
+                    <span className="difficulty-desc">{d.desc}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="setup-section">
+              <label className="section-label">Play As</label>
+              <div className="color-selector">
+                <div 
+                  className={`color-option ${humanColor === 'white' ? 'active' : ''}`}
+                  onClick={() => setHumanColor('white')}
+                >
+                  <div className="color-preview white" />
+                  White (First Move)
+                </div>
+                <div 
+                  className={`color-option ${humanColor === 'black' ? 'active' : ''}`}
+                  onClick={() => setHumanColor('black')}
+                >
+                  <div className="color-preview black" />
+                  Black
+                </div>
+              </div>
+            </div>
+
+            <button 
+              className="btn-play" 
+              onClick={startGame} 
+              disabled={connected !== true}
+            >
+              {connected === true ? (
+                <>Start Battle <i className="fa-solid fa-chess-knight"></i></>
+              ) : connected === 'connecting' ? (
+                <>Connecting to Bridge... <i className="fa-solid fa-spinner fa-spin"></i></>
+              ) : (
+                <>Bridge Connection Failed <i className="fa-solid fa-circle-xmark"></i></>
+              )}
             </button>
           </div>
         </div>
+      ) : (
+        <div className="main-content">
+          {/* Left panel */}
+          <aside className="sidebar left">
+            <div>
+              <div className="section-label">Current Match</div>
+              <div className="difficulty-badge" style={{ marginBottom: '14px' }}>
+                <i className="fa-solid fa-gauge-high"></i> {difficulty.toUpperCase()}
+              </div>
+            </div>
 
-        {gameStarted&&(
-          <>
             <div>
-              <div className="section-label">Status</div>
+              <div className="section-label">Game Status</div>
               <div className={`status ${statusType}`}>
-                {thinking&&<span className="thinking-dot" style={{display:'inline-block',marginRight:6}}/>}
-                {statusMsg}
+                {thinking && <i className="fa-solid fa-spinner fa-spin thinking-spinner"></i>}
+                <span>{statusMsg}</span>
               </div>
             </div>
-            <div>
-              <div className="section-label">Captured</div>
-              <div style={{fontSize:11,color:'var(--muted)',marginBottom:4}}>White captured</div>
-              <div className="captured">
-                {capturedBlack.map((p,i)=><span key={i}>{PIECES[p]}</span>)}
-              </div>
-              <div style={{fontSize:11,color:'var(--muted)',margin:'6px 0 4px'}}>Black captured</div>
-              <div className="captured">
-                {capturedWhite.map((p,i)=><span key={i}>{PIECES[p]}</span>)}
-              </div>
-            </div>
-            <div style={{marginTop:'auto',display:'flex',flexDirection:'column',gap:8}}>
-              <button className="btn btn-danger" onClick={resign} disabled={thinking||!gameStarted}>
-                Resign
+
+            <div className="sidebar-actions" style={{ marginTop: 'auto' }}>
+              <button className="btn btn-secondary" onClick={startGame}>
+                <i className="fa-solid fa-rotate-left"></i> New Game
+              </button>
+              <button className="btn btn-danger" onClick={resign} disabled={thinking}>
+                <i className="fa-solid fa-flag"></i> Resign
               </button>
             </div>
-          </>
-        )}
-      </div>
+          </aside>
 
-      {/* Center — board */}
-      <div className="center">
-        <div style={{display:'flex',alignItems:'flex-start',gap:16}}>
-          <EvalBar evalBar={evalBar} boardSize={480}/>
-          <ChessBoard
-            fen={fen}
-            lastMove={lastMove}
-            hints={showHints?hints:[]}
-            legalMoves={legalMoves}
-            onSquareClick={handleSquareClick}
-            selected={selected}
-            flipped={flipped}
-            inCheck={gameState?.is_check}
-            humanColor={humanColor}
-          />
-        </div>
-      </div>
-
-      {/* Right panel */}
-      <div className="right-panel">
-
-        {/* Stockfish hints */}
-        <div>
-          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
-            <div className="section-label" style={{margin:0}}>Stockfish Hints</div>
-            <button
-              className="btn btn-ghost"
-              style={{padding:'4px 10px',fontSize:12}}
-              onClick={requestHints}
-              disabled={!isMyTurn||!gameStarted}
-            >
-              Get hints
-            </button>
-          </div>
-          {hints.length>0?(
-            <div style={{display:'flex',flexDirection:'column',gap:8}}>
-              {hints.map(h=>(
-                <div key={h.rank} className="hint-card" onClick={()=>{
-                  if(isMyTurn){ send({action:'human_move',move:h.move}); setHints([]); setShowHints(false); }
-                }}>
-                  <div className={`hint-rank r${h.rank}`}>
-                    {h.rank===1?'Best move':h.rank===2?'Good move':'Alternative'}
-                  </div>
-                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                    <div className="hint-move">{h.move}</div>
-                    <div style={{fontSize:13,fontFamily:'Space Mono',color:h.score_cp>0?'var(--green)':h.score_cp<0?'var(--red)':'var(--muted)'}}>
-                      {h.score_text}
-                    </div>
-                  </div>
-                  {h.continuation?.length>0&&(
-                    <div className="hint-cont">{h.continuation.join(' ')}</div>
-                  )}
+          {/* Center board area */}
+          <div className="board-area">
+            {/* Top Player (AI if human is white, Human if human is black) */}
+            <div className="player-bar">
+              <div className="player-info">
+                <div className="player-avatar">
+                  {humanColor === 'white' ? <i className="fa-solid fa-robot"></i> : <i className="fa-solid fa-user"></i>}
                 </div>
-              ))}
-            </div>
-          ):(
-            <div style={{fontSize:12,color:'var(--muted)',padding:'8px 0'}}>
-              {gameStarted?'Click "Get hints" for Stockfish suggestions':'Start a game first'}
-            </div>
-          )}
-        </div>
-
-        {/* Engine stats */}
-        <div>
-          <div className="section-label">Engine Stats</div>
-          <div style={{border:'1px solid var(--border)',borderRadius:8,overflow:'hidden'}}>
-            {[
-              ['Depth',engineInfo?`${engineInfo.depth}`:'—'],
-              ['Score',engineInfo?`${engineInfo.score > 0?'+':''}${(engineInfo.score/100).toFixed(2)}`:'—'],
-              ['Nodes',engineInfo?engineInfo.nodes.toLocaleString():'—'],
-              ['NPS',engineInfo?`${(engineInfo.nps/1000).toFixed(0)}k`:'—'],
-            ].map(([l,v])=>(
-              <div className="stat-row" key={l} style={{padding:'7px 12px'}}>
-                <span className="stat-label">{l}</span>
-                <span className="stat-value">{v}</span>
+                <div className="player-name">
+                  {humanColor === 'white' ? `ChessMind AI (${difficulty})` : 'You'}
+                </div>
               </div>
-            ))}
-          </div>
-          {engineInfo?.pv&&(
-            <div style={{marginTop:8}}>
-              <div className="section-label">Best line</div>
-              <div className="pv-line">{engineInfo.pv}</div>
-            </div>
-          )}
-        </div>
-
-        {/* Move history */}
-        <div>
-          <div className="section-label">Move history</div>
-          <div className="move-list">
-            {moveListPairs.map(({num,w,b})=>(
-              <div className="move-row" key={num}>
-                <span className="move-num">{num}.</span>
-                <span className="move-san">{w?.move||''}</span>
-                <span className="move-san">{b?.move||''}</span>
+              <div className="captured-container">
+                <div className="captured-list">
+                  {(humanColor === 'white' ? capturedWhite : capturedBlack).map((p, i) => (
+                    <div className="captured-piece-wrapper" key={i}><Piece type={p} /></div>
+                  ))}
+                </div>
+                {getMaterialScore(capturedWhite, capturedBlack) !== 0 && (
+                  <span className="material-diff" style={{ 
+                    color: ((humanColor === 'white' && getMaterialScore(capturedWhite, capturedBlack) < 0) || (humanColor === 'black' && getMaterialScore(capturedWhite, capturedBlack) > 0)) ? 'var(--green)' : 'var(--text-muted)',
+                    background: ((humanColor === 'white' && getMaterialScore(capturedWhite, capturedBlack) < 0) || (humanColor === 'black' && getMaterialScore(capturedWhite, capturedBlack) > 0)) ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.05)'
+                  }}>
+                    {humanColor === 'white' 
+                      ? (getMaterialScore(capturedWhite, capturedBlack) < 0 ? `+${Math.abs(getMaterialScore(capturedWhite, capturedBlack))}` : `-${getMaterialScore(capturedWhite, capturedBlack)}`)
+                      : (getMaterialScore(capturedWhite, capturedBlack) > 0 ? `+${getMaterialScore(capturedWhite, capturedBlack)}` : `-${Math.abs(getMaterialScore(capturedWhite, capturedBlack))}`)}
+                  </span>
+                )}
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
 
-      </div>
+            {/* Board and Eval Bar */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+              <EvalBar evalBar={evalBar} boardSize={480} />
+              <ChessBoard
+                fen={fen}
+                lastMove={lastMove}
+                hints={showHints ? hints : []}
+                legalMoves={legalMoves}
+                onSquareClick={handleSquareClick}
+                selected={selected}
+                flipped={flipped}
+                inCheck={gameState?.is_check}
+                humanColor={humanColor}
+                theme={boardTheme}
+              />
+            </div>
+
+            {/* Bottom Player (Human if human is white, AI if human is black) */}
+            <div className="player-bar">
+              <div className="player-info">
+                <div className="player-avatar">
+                  {humanColor === 'white' ? <i className="fa-solid fa-user"></i> : <i className="fa-solid fa-robot"></i>}
+                </div>
+                <div className="player-name">
+                  {humanColor === 'white' ? 'You' : `ChessMind AI (${difficulty})`}
+                </div>
+              </div>
+              <div className="captured-container">
+                <div className="captured-list">
+                  {(humanColor === 'white' ? capturedBlack : capturedWhite).map((p, i) => (
+                    <div className="captured-piece-wrapper" key={i}><Piece type={p} /></div>
+                  ))}
+                </div>
+                {getMaterialScore(capturedWhite, capturedBlack) !== 0 && (
+                  <span className="material-diff" style={{ 
+                    color: ((humanColor === 'white' && getMaterialScore(capturedWhite, capturedBlack) > 0) || (humanColor === 'black' && getMaterialScore(capturedWhite, capturedBlack) < 0)) ? 'var(--green)' : 'var(--text-muted)',
+                    background: ((humanColor === 'white' && getMaterialScore(capturedWhite, capturedBlack) > 0) || (humanColor === 'black' && getMaterialScore(capturedWhite, capturedBlack) < 0)) ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.05)'
+                  }}>
+                    {humanColor === 'white'
+                      ? (getMaterialScore(capturedWhite, capturedBlack) > 0 ? `+${getMaterialScore(capturedWhite, capturedBlack)}` : `-${Math.abs(getMaterialScore(capturedWhite, capturedBlack))}`)
+                      : (getMaterialScore(capturedWhite, capturedBlack) < 0 ? `+${Math.abs(getMaterialScore(capturedWhite, capturedBlack))}` : `-${getMaterialScore(capturedWhite, capturedBlack)}`)}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Right panel */}
+          <aside className="sidebar right" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {/* Stockfish Hints */}
+            <div className="sidebar-section">
+              <div className="section-header">
+                <div className="section-label">Stockfish Hints</div>
+                <button 
+                  className={`btn btn-small ${autoHints ? 'btn-active-neon' : ''}`}
+                  onClick={() => {
+                    const next = !autoHints;
+                    setAutoHints(next);
+                    if (next && isMyTurn) {
+                      requestHints();
+                    }
+                  }}
+                >
+                  <i className={`fa-solid ${autoHints ? 'fa-toggle-on' : 'fa-toggle-off'}`}></i> Auto Hints: {autoHints ? 'ON' : 'OFF'}
+                </button>
+              </div>
+
+              {hintError ? (
+                <div className="sidebar-placeholder" style={{ borderColor: 'rgba(239, 68, 68, 0.2)', padding: '16px' }}>
+                  <i className="fa-solid fa-triangle-exclamation placeholder-icon" style={{ color: 'var(--red)', fontSize: '24px', marginBottom: '8px' }}></i>
+                  <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px', lineHeight: '1.4', textAlign: 'center' }}>{hintError}</span>
+                </div>
+              ) : hints.length > 0 ? (
+                <div className="hints-list">
+                  {hints.map(h => (
+                    <div 
+                      key={h.rank} 
+                      className={`hint-card q-${h.quality}`}
+                      onClick={() => {
+                        if (isMyTurn) {
+                          send({ action: 'human_move', move: h.move });
+                          setHints([]);
+                          setShowHints(false);
+                        }
+                      }}
+                    >
+                      <div className="hint-header">
+                        <span className="hint-rank-label">#{h.rank} {h.quality.toUpperCase()}</span>
+                        <span className="hint-eval-score">{h.score_text}</span>
+                      </div>
+                      <div className="hint-move-text">{h.move}</div>
+                      {h.continuation && h.continuation.length > 0 && (
+                        <div className="hint-continuation">
+                          <i className="fa-solid fa-turn-down"></i> {h.continuation.join(' ')}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="sidebar-placeholder">
+                  <i className="fa-regular fa-lightbulb placeholder-icon"></i>
+                  <span>Toggle "Auto Hints" for Stockfish recommendations on every move.</span>
+                </div>
+              )}
+            </div>
+
+            {/* Engine Stats */}
+            <div className="sidebar-section">
+              <div className="section-label">Engine HUD</div>
+              <div className="stats-hud">
+                <div className="hud-row">
+                  <span className="hud-label">Depth</span>
+                  <span className="hud-val">{engineInfo ? engineInfo.depth : '—'}</span>
+                </div>
+                <div className="hud-row">
+                  <span className="hud-label">Score</span>
+                  <span className="hud-val">{engineInfo ? `${engineInfo.score > 0 ? '+' : ''}${(engineInfo.score / 100).toFixed(2)}` : '—'}</span>
+                </div>
+                <div className="hud-row">
+                  <span className="hud-label">Nodes</span>
+                  <span className="hud-val">{engineInfo ? engineInfo.nodes.toLocaleString() : '—'}</span>
+                </div>
+                <div className="hud-row">
+                  <span className="hud-label">Speed</span>
+                  <span className="hud-val">{engineInfo ? `${(engineInfo.nps / 1000).toFixed(0)} kN/s` : '—'}</span>
+                </div>
+              </div>
+              {engineInfo?.pv && (
+                <div className="pv-container">
+                  <div className="pv-label">Calculated Line</div>
+                  <div className="pv-text">{engineInfo.pv}</div>
+                </div>
+              )}
+            </div>
+
+            {/* Move history */}
+            <div className="sidebar-section" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 140 }}>
+              <div className="section-label">Move Log</div>
+              <div className="move-history-container" style={{ flex: 1 }}>
+                {moveListPairs.length > 0 ? (
+                  <div className="move-history-table">
+                    {moveListPairs.map((pair, index) => (
+                      <div className="move-history-row" key={index}>
+                        <span className="move-idx">{pair.num}.</span>
+                        <span className="move-val white">{pair.w?.move || ''}</span>
+                        <span className="move-val black">{pair.b?.move || ''}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="sidebar-placeholder small">
+                    <span>No moves played yet</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Engine Brain Console */}
+            <div className="sidebar-section" style={{ display: 'flex', flexDirection: 'column', height: '140px', minHeight: '140px' }}>
+              <div className="section-label">Engine Brain Console</div>
+              <div 
+                className="console-terminal"
+                style={{
+                  flex: 1,
+                  background: 'rgba(5, 5, 8, 0.9)',
+                  border: '1px solid rgba(0, 255, 200, 0.08)',
+                  borderRadius: '8px',
+                  padding: '10px',
+                  fontFamily: 'Space Mono, monospace',
+                  fontSize: '10px',
+                  color: '#39ff14',
+                  overflowY: 'auto',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '4px',
+                  lineHeight: '1.4'
+                }}
+                ref={consoleRef}
+              >
+                {consoleLogs.length > 0 ? (
+                  consoleLogs.map((log, idx) => (
+                    <div key={idx} style={{ color: log.startsWith('bestmove') ? '#00ffc8' : log.startsWith('info') ? '#39ff14' : '#3a5a4a' }}>
+                      <span style={{ color: '#00e5ff', marginRight: '6px' }}>›</span>{log}
+                    </div>
+                  ))
+                ) : (
+                  <div style={{ color: '#2a4a3a', fontStyle: 'italic', textAlign: 'center', marginTop: '20px' }}>
+                    Engine stdout idle. Play a move...
+                  </div>
+                )}
+              </div>
+            </div>
+          </aside>
+        </div>
+      )}
     </div>
   );
 }

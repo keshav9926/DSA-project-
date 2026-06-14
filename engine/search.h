@@ -217,7 +217,7 @@ public:
     /// killermoves[ply][0] = primary killer, [ply][1] = secondary
     /// Used for move ordering without position evaluation
     /// Memory: 2 × MAX_PLY × 32 bits = ~1 KB
-    int killerMoves[MAX_PLY][2] = {};
+    Move killerMoves[MAX_PLY][2] = {};
     
     /// History heuristic: count of cutoffs per piece-square
     /// historyTable[WHITE/BLACK][piece_type][destination_square]

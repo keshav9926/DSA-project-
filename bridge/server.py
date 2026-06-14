@@ -40,9 +40,45 @@ async def get_index():
 # Mount the entire frontend directory just in case there are images/css
 app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
 
+# ─── Load .env file manually ──────────────────────────────────────────────────
+env_path = os.path.join(os.path.dirname(__file__), ".env")
+if os.path.exists(env_path):
+    try:
+        with open(env_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    k, v = line.split("=", 1)
+                    os.environ[k.strip()] = v.strip()
+    except Exception as e:
+        print(f"[WARN] Failed to read .env: {e}")
+
 # ─── Engine paths ─────────────────────────────────────────────────────────────
 CHESSMIND_PATH = os.environ.get("CHESSMIND_BIN", "./chessmind")
-STOCKFISH_PATH = os.environ.get("STOCKFISH_PATH", "stockfish")
+STOCKFISH_PATH = os.environ.get("STOCKFISH_PATH", "")
+
+# Fallback check on Windows
+if os.name == 'nt':
+    if CHESSMIND_PATH == "./chessmind" or not os.path.exists(CHESSMIND_PATH):
+        possible_paths = [
+            os.path.join(os.path.dirname(__file__), "chessmind.exe"),
+            os.path.abspath("chessmind.exe"),
+            os.path.abspath("bridge/chessmind.exe"),
+            os.path.abspath("../bridge/chessmind.exe"),
+            "./chessmind.exe"
+        ]
+        for p in possible_paths:
+            if os.path.exists(p):
+                CHESSMIND_PATH = p
+                break
+    
+    # Try finding stockfish in PATH or common places
+    if not STOCKFISH_PATH:
+        import shutil
+        sf = shutil.which("stockfish")
+        if sf:
+            STOCKFISH_PATH = sf
+
 
 # ─── Difficulty → depth + time ────────────────────────────────────────────────
 DIFFICULTY = {
@@ -110,13 +146,17 @@ class UCIEngine:
         else:
             self._send(f"position fen {fen}")
 
-    def get_best_move(self, depth: int, movetime: int) -> dict:
+    def get_best_move(self, depth: int, movetime: int, on_info=None) -> dict:
         self._send(f"go depth {depth} movetime {movetime}")
         info = {"depth": 0, "score": 0, "nodes": 0, "nps": 0, "pv": ""}
         best_move = None
 
         while True:
             line = self._read_line(timeout=movetime/1000 + 5)
+            if not line:
+                break
+            if on_info:
+                on_info(line)
             if line.startswith("info"):
                 # Parse info line
                 dm = re.search(r"depth (\d+)", line)
@@ -148,12 +188,16 @@ class UCIEngine:
 
 # ─── Game session ─────────────────────────────────────────────────────────────
 class GameSession:
-    def __init__(self, session_id: str, difficulty: str = "hard", human_color: str = "white"):
+    def __init__(self, session_id: str, difficulty: str = "hard", human_color: str = "white", depth: int = None, movetime: int = None):
         self.session_id   = session_id
         self.difficulty   = DIFFICULTY.get(difficulty, DIFFICULTY["hard"])
         self.human_color  = chess.WHITE if human_color == "white" else chess.BLACK
         self.board        = chess.Board()
         self.move_history : list[str] = []
+
+        # Custom parameters override
+        self.depth = depth if depth is not None else self.difficulty["depth"]
+        self.movetime = movetime if movetime is not None else self.difficulty["movetime"]
 
         # Launch our C++ engine
         try:
@@ -181,13 +225,14 @@ class GameSession:
             pass
         return False
 
-    def get_engine_move(self) -> dict:
+    def get_engine_move(self, on_info=None) -> dict:
         if not self.engine:
             return {"error": "Engine not available"}
         self.engine.set_position(self.board.fen(), [])
         result = self.engine.get_best_move(
-            self.difficulty["depth"],
-            self.difficulty["movetime"]
+            self.depth,
+            self.movetime,
+            on_info=on_info
         )
         return result
 
@@ -276,18 +321,28 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
                 if session: session.close()
                 difficulty = msg.get("difficulty", "hard")
                 human_color = msg.get("human_color", "white")
-                session = GameSession(session_id, difficulty, human_color)
+                depth = msg.get("depth")
+                movetime = msg.get("movetime")
+                session = GameSession(session_id, difficulty, human_color, depth=depth, movetime=movetime)
                 sessions[session_id] = session
                 state = session.get_state()
                 eval_bar = await asyncio.get_event_loop().run_in_executor(
                     None, session.get_eval_bar)
                 await send({"type": "game_started", "state": state,
                             "eval_bar": eval_bar, "difficulty": difficulty,
-                            "human_color": human_color})
+                            "human_color": human_color, "depth": session.depth, "movetime": session.movetime})
 
                 # If AI plays first (human is black)
                 if human_color == "black":
                     await _ai_move(session, send)
+
+            # ── Update settings ────────────────────────────────────────────────
+            elif action == "update_settings":
+                if not session:
+                    await send({"type": "error", "msg": "No active game"}); continue
+                session.depth = msg.get("depth", session.depth)
+                session.movetime = msg.get("movetime", session.movetime)
+                await send({"type": "settings_updated", "depth": session.depth, "movetime": session.movetime})
 
             # ── Human move ─────────────────────────────────────────────────────
             elif action == "human_move":
@@ -317,6 +372,9 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
             elif action == "get_hints":
                 if not session:
                     await send({"type": "error", "msg": "No active game"}); continue
+                if not session.stockfish:
+                    await send({"type": "hints", "hints": [], "error": "Stockfish is not configured. Please install Stockfish and configure STOCKFISH_PATH in bridge/.env to enable live analysis hints."})
+                    continue
                 hints = await asyncio.get_event_loop().run_in_executor(
                     None, session.get_hints)
                 await send({"type": "hints", "hints": hints})
@@ -348,7 +406,12 @@ async def _ai_move(session: GameSession, send):
     await send({"type": "ai_thinking", "thinking": True})
     loop = asyncio.get_event_loop()
 
-    result = await loop.run_in_executor(None, session.get_engine_move)
+    def on_info(line):
+        loop.call_soon_threadsafe(
+            lambda: asyncio.create_task(send({"type": "engine_log", "log": line}))
+        )
+
+    result = await loop.run_in_executor(None, lambda: session.get_engine_move(on_info=on_info))
     ai_uci = result.get("move", "")
 
     if ai_uci and ai_uci != "0000":
