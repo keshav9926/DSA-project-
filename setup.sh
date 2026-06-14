@@ -53,8 +53,30 @@ if command -v stockfish &>/dev/null; then
     ok "Stockfish found: $(stockfish --help 2>/dev/null | head -1 || echo 'stockfish')"
     STOCKFISH_PATH="stockfish"
 else
-    warn "Stockfish not found — hints will be disabled. Install: sudo apt install stockfish"
-    STOCKFISH_PATH=""
+    if [ "$(uname)" = "Linux" ]; then
+        info "Stockfish not found, attempting to download precompiled Linux Stockfish..."
+        if curl -L -s -o stockfish.tar "https://github.com/official-stockfish/Stockfish/releases/download/sf_16/stockfish-ubuntu-x86-64-modern.tar" || \
+           wget -q -O stockfish.tar "https://github.com/official-stockfish/Stockfish/releases/download/sf_16/stockfish-ubuntu-x86-64-modern.tar"; then
+            tar -xf stockfish.tar
+            if [ -f stockfish/stockfish-ubuntu-x86-64-modern ]; then
+                mkdir -p "$SCRIPT_DIR/bridge"
+                mv stockfish/stockfish-ubuntu-x86-64-modern "$SCRIPT_DIR/bridge/stockfish"
+                chmod +x "$SCRIPT_DIR/bridge/stockfish"
+                STOCKFISH_PATH="$SCRIPT_DIR/bridge/stockfish"
+                ok "Downloaded and configured Stockfish successfully!"
+            else
+                warn "Could not find stockfish binary inside extracted archive."
+                STOCKFISH_PATH=""
+            fi
+            rm -rf stockfish.tar stockfish
+        else
+            warn "Failed to download Stockfish. Hints and evaluation bar will be disabled."
+            STOCKFISH_PATH=""
+        fi
+    else
+        warn "Stockfish not found — hints will be disabled. Install: sudo apt install stockfish"
+        STOCKFISH_PATH=""
+    fi
 fi
 
 # pip packages

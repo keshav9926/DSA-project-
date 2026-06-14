@@ -126,7 +126,64 @@ else:
                 break
     
     # Try finding stockfish in PATH or common places
-    if not STOCKFISH_PATH:
+    if not STOCKFISH_PATH or not os.path.exists(STOCKFISH_PATH):
+        possible_sf_paths = [
+            os.path.join(os.path.dirname(__file__), "stockfish"),
+            os.path.abspath("stockfish"),
+            os.path.abspath("bridge/stockfish"),
+            os.path.abspath("../bridge/stockfish"),
+            "./stockfish"
+        ]
+        for p in possible_sf_paths:
+            if os.path.exists(p):
+                STOCKFISH_PATH = p
+                break
+
+    # If still not found and we are on Linux, download it dynamically!
+    if (not STOCKFISH_PATH or not os.path.exists(STOCKFISH_PATH)) and os.name != 'nt':
+        try:
+            target_dir = os.path.dirname(__file__)
+            target_path = os.path.join(target_dir, "stockfish")
+            print(f"[STARTUP] Stockfish not found. Downloading precompiled Linux Stockfish to {target_path}...")
+            
+            import urllib.request
+            import tarfile
+            
+            url = "https://github.com/official-stockfish/Stockfish/releases/download/sf_16/stockfish-ubuntu-x86-64-modern.tar"
+            tar_path = os.path.join(target_dir, "stockfish.tar")
+            
+            # Download tar
+            urllib.request.urlretrieve(url, tar_path)
+            
+            # Extract tar
+            with tarfile.open(tar_path, "r:") as tar:
+                tar.extractall(path=target_dir)
+                
+            # Move binary
+            extracted_bin = os.path.join(target_dir, "stockfish", "stockfish-ubuntu-x86-64-modern")
+            if os.path.exists(extracted_bin):
+                if os.path.exists(target_path):
+                    os.remove(target_path)
+                os.rename(extracted_bin, target_path)
+                
+                # Make executable
+                import stat
+                os.chmod(target_path, os.stat(target_path).st_mode | stat.S_IEXEC)
+                STOCKFISH_PATH = target_path
+                print("[STARTUP] Stockfish downloaded and configured successfully!")
+            
+            # Clean up
+            if os.path.exists(tar_path):
+                os.remove(tar_path)
+            import shutil
+            extracted_folder = os.path.join(target_dir, "stockfish")
+            if os.path.exists(extracted_folder) and os.path.isdir(extracted_folder):
+                shutil.rmtree(extracted_folder)
+                
+        except Exception as e:
+            print(f"[WARN] Failed to download Stockfish at startup: {e}")
+
+    if not STOCKFISH_PATH or not os.path.exists(STOCKFISH_PATH):
         import shutil
         sf = shutil.which("stockfish")
         if sf:
