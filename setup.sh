@@ -34,7 +34,11 @@ head "Step 1 — Checking prerequisites"
 if command -v g++ &>/dev/null; then
     ok "g++ found: $(g++ --version | head -1)"
 else
-    fail "g++ not found. Install with: sudo apt install g++ (Ubuntu) or xcode-select --install (macOS)"
+    if [ -f "$SCRIPT_DIR/bridge/chessmind" ] || [ -f "$SCRIPT_DIR/engine/chessmind" ]; then
+        warn "g++ not found, but precompiled chessmind binary exists. Skipping compilation check."
+    else
+        fail "g++ not found. Install with: sudo apt install g++ (Ubuntu) or xcode-select --install (macOS)"
+    fi
 fi
 
 # python3
@@ -66,38 +70,58 @@ python3 -c "import fastapi, uvicorn, chess" 2>/dev/null && ok "Python packages r
 head "Step 3 — Compiling ChessMind C++ engine"
 cd "$SCRIPT_DIR/engine"
 
-info "Compiling (this takes ~5 seconds)..."
-if g++ -std=c++17 -O3 -march=native -o chessmind \
-    main.cpp board.cpp movegen.cpp eval.cpp search.cpp 2>&1; then
-    ok "Engine compiled successfully"
+if command -v g++ &>/dev/null; then
+    info "Compiling (this takes ~5 seconds)..."
+    if g++ -std=c++17 -O3 -march=native -o chessmind \
+        main.cpp board.cpp movegen.cpp eval.cpp search.cpp 2>&1; then
+        ok "Engine compiled successfully"
+    else
+        warn "O3+native failed, trying safer flags..."
+        g++ -std=c++17 -O2 -o chessmind \
+            main.cpp board.cpp movegen.cpp eval.cpp search.cpp || fail "Compilation failed"
+        ok "Engine compiled (O2 mode)"
+    fi
 else
-    warn "O3+native failed, trying safer flags..."
-    g++ -std=c++17 -O2 -o chessmind \
-        main.cpp board.cpp movegen.cpp eval.cpp search.cpp || fail "Compilation failed"
-    ok "Engine compiled (O2 mode)"
+    if [ -f "$SCRIPT_DIR/bridge/chessmind" ]; then
+        ok "Using existing precompiled binary in bridge/"
+    elif [ -f "$SCRIPT_DIR/engine/chessmind" ]; then
+        ok "Using existing precompiled binary in engine/"
+    else
+        fail "g++ not found and no precompiled binary exists to compile the engine."
+    fi
 fi
 
 # ─── Step 4: Verify engine with perft ────────────────────────────────────────
 head "Step 4 — Verifying move generation (perft tests)"
-info "Compiling perft tests..."
-g++ -std=c++17 -O3 -o perft perft.cpp board.cpp movegen.cpp eval.cpp search.cpp 2>/dev/null || \
-g++ -std=c++17 -O2 -o perft perft.cpp board.cpp movegen.cpp eval.cpp search.cpp
+if command -v g++ &>/dev/null; then
+    info "Compiling perft tests..."
+    g++ -std=c++17 -O3 -o perft perft.cpp board.cpp movegen.cpp eval.cpp search.cpp 2>/dev/null || \
+    g++ -std=c++17 -O2 -o perft perft.cpp board.cpp movegen.cpp eval.cpp search.cpp
 
-info "Running perft suite..."
-PERFT_OUT=$(./perft 2>&1 | strings 2>/dev/null || ./perft 2>&1)
-if echo "$PERFT_OUT" | grep -q "All tests passed"; then
-    ok "All 11/11 perft tests passed — move generation correct"
-elif echo "$PERFT_OUT" | grep -q "11/11"; then
-    ok "All 11/11 perft tests passed"
+    info "Running perft suite..."
+    PERFT_OUT=$(./perft 2>&1 | strings 2>/dev/null || ./perft 2>&1)
+    if echo "$PERFT_OUT" | grep -q "All tests passed"; then
+        ok "All 11/11 perft tests passed — move generation correct"
+    elif echo "$PERFT_OUT" | grep -q "11/11"; then
+        ok "All 11/11 perft tests passed"
+    else
+        PASSED=$(echo "$PERFT_OUT" | grep -oP '\d+(?=/11)' | tail -1)
+        warn "Perft: $PASSED/11 tests passed — engine may have minor bugs"
+    fi
 else
-    PASSED=$(echo "$PERFT_OUT" | grep -oP '\d+(?=/11)' | tail -1)
-    warn "Perft: $PASSED/11 tests passed — engine may have minor bugs"
+    warn "g++ not found — skipping perft verification tests."
 fi
 
 # ─── Step 5: Copy engine to bridge ───────────────────────────────────────────
 head "Step 5 — Setting up bridge"
-cp chessmind "$SCRIPT_DIR/bridge/chessmind"
-ok "Engine binary copied to bridge/"
+if [ -f "$SCRIPT_DIR/engine/chessmind" ]; then
+    cp chessmind "$SCRIPT_DIR/bridge/chessmind"
+    ok "Engine binary copied to bridge/"
+elif [ -f "$SCRIPT_DIR/bridge/chessmind" ]; then
+    ok "Engine binary already present in bridge/"
+else
+    fail "Engine binary not found."
+fi
 
 # Quick engine sanity check
 ENGINE_TEST=$(echo -e "uci\nisready\nquit" | "$SCRIPT_DIR/bridge/chessmind" 2>/dev/null)
