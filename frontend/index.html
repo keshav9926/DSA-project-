@@ -1232,7 +1232,7 @@ function ChessBoard({fen,lastMove,hints,legalMoves,onSquareClick,selected,flippe
           
           const showRankLabel = f === files[0];
           const showFileLabel = r === ranks[7];
-          const rankLabel = flipped ? (r + 1) : (8 - r);
+          const rankLabel = r + 1;
           const fileLabel = String.fromCharCode(97 + f);
 
           return(
