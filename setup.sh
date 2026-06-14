@@ -60,9 +60,9 @@ else
             tar -xf stockfish.tar
             if [ -f stockfish/stockfish-ubuntu-x86-64-modern ]; then
                 mkdir -p "$SCRIPT_DIR/bridge"
-                mv stockfish/stockfish-ubuntu-x86-64-modern "$SCRIPT_DIR/bridge/stockfish"
-                chmod +x "$SCRIPT_DIR/bridge/stockfish"
-                STOCKFISH_PATH="$SCRIPT_DIR/bridge/stockfish"
+                mv stockfish/stockfish-ubuntu-x86-64-modern "$SCRIPT_DIR/bridge/stockfish_bin"
+                chmod +x "$SCRIPT_DIR/bridge/stockfish_bin"
+                STOCKFISH_PATH="$SCRIPT_DIR/bridge/stockfish_bin"
                 ok "Downloaded and configured Stockfish successfully!"
             else
                 warn "Could not find stockfish binary inside extracted archive."

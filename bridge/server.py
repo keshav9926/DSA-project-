@@ -129,10 +129,15 @@ else:
     if not STOCKFISH_PATH or not os.path.exists(STOCKFISH_PATH):
         possible_sf_paths = [
             os.path.join(os.path.dirname(__file__), "stockfish"),
+            os.path.join(os.path.dirname(__file__), "stockfish_bin"),
             os.path.abspath("stockfish"),
+            os.path.abspath("stockfish_bin"),
             os.path.abspath("bridge/stockfish"),
+            os.path.abspath("bridge/stockfish_bin"),
             os.path.abspath("../bridge/stockfish"),
-            "./stockfish"
+            os.path.abspath("../bridge/stockfish_bin"),
+            "./stockfish",
+            "./stockfish_bin"
         ]
         for p in possible_sf_paths:
             if os.path.exists(p):
@@ -143,7 +148,7 @@ else:
     if (not STOCKFISH_PATH or not os.path.exists(STOCKFISH_PATH)) and os.name != 'nt':
         try:
             target_dir = os.path.dirname(__file__)
-            target_path = os.path.join(target_dir, "stockfish")
+            target_path = os.path.join(target_dir, "stockfish_bin")
             print(f"[STARTUP] Stockfish not found. Downloading precompiled Linux Stockfish to {target_path}...")
             
             import urllib.request
